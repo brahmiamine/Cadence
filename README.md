@@ -1,36 +1,46 @@
 # Cadence
 
-Un carnet d’habitudes personnel, responsive et utilisable hors ligne, installable comme PWA.
+Carnet d’habitudes personnel, désormais en **Next.js** avec **comptes multi-utilisateurs** (NextAuth) et **données stockées en base PostgreSQL** pour chaque utilisateur.
 
-Application publiée : https://mosaique-habitudes.brahmiamine.chatgpt.site
+## Stack
+
+- Next.js 15 (App Router) · React 19 · TypeScript
+- NextAuth v4 (credentials e-mail / mot de passe, sessions JWT, mots de passe hachés avec bcrypt)
+- Prisma + PostgreSQL (tables `User`, `Habit`, `Entry`)
 
 ## Démarrage local
 
-L’application utilise HTML, CSS et JavaScript natifs. Aucune compilation ni dépendance npm n’est nécessaire.
-
 ```sh
-python3 -m http.server 8080 --directory dist
+cp .env.example .env          # puis définir NEXTAUTH_SECRET (openssl rand -base64 32)
+docker compose up -d db       # PostgreSQL
+npm install
+npx prisma migrate deploy     # crée les tables
+npm run dev                   # http://localhost:3000
 ```
 
-Ouvrir http://localhost:8080. Un serveur HTTP est nécessaire pour charger les modules JavaScript ; ouvrir directement `index.html` ne suffit pas.
+Créez un compte sur `/register` : chaque utilisateur accède uniquement à son propre espace.
+
+## Variables d’environnement
+
+| Variable | Rôle |
+|---|---|
+| `DATABASE_URL` | URL PostgreSQL |
+| `NEXTAUTH_SECRET` | Secret de signature des sessions |
+| `NEXTAUTH_URL` | URL publique de l’application |
+
+## Déploiement (ex. Vercel + Neon/Supabase)
+
+Définir les 3 variables ci-dessus, puis exécuter `npx prisma migrate deploy` contre la base de production (build : `npm run build`).
 
 ## Organisation
 
-- `dist/index.html` : structure de la page.
-- `dist/app.js` : interface et interactions.
-- `dist/model.js` : logique des habitudes et calcul des statistiques.
-- `dist/style.css` : styles et adaptation aux écrans mobiles.
-- `dist/sw.js` : cache et fonctionnement hors ligne.
-- `dist/manifest.webmanifest` : configuration de la PWA.
-- `dist/assets/` : icônes, écrans de démarrage et polices avec leur licence.
-- `.openai/hosting.json` : configuration du site existant dans ChatGPT Sites.
+- `src/app/` : pages (`/`, `/login`, `/register`) et API (`/api/auth`, `/api/register`, `/api/data`).
+- `src/lib/cadence/model.js` : logique des habitudes et statistiques (partagée client/serveur pour la validation).
+- `src/lib/cadence/engine.js` : interface historique de Cadence, branchée sur l’API au lieu du `localStorage`.
+- `src/lib/data.ts` : lecture/écriture des données d’un utilisateur en base.
+- `prisma/` : schéma et migrations.
+- `public/` : icônes, polices, manifeste PWA, service worker (ressources statiques uniquement).
 
-## Données et installation
+## Données
 
-Les habitudes sont enregistrées dans le stockage local du navigateur. Les paramètres permettent d’exporter et d’importer une sauvegarde JSON. Un autre domaine ou navigateur utilise un stockage distinct.
-
-Pour installer la PWA et utiliser le service worker, servir l’application en HTTPS ou sur `localhost`. Le mode hors ligne devient disponible après le premier chargement et la mise en cache.
-
-## Provenance
-
-Import de la version du dépôt source Sites au commit `12a8557`. Les fichiers de l’application sont conservés à l’identique.
+Chaque modification est synchronisée vers `/api/data` (validée côté serveur, isolée par utilisateur). L’export/import JSON reste disponible dans les paramètres ; l’import d’une ancienne sauvegarde locale la rattache au compte connecté. Les données sont rafraîchies quand l’onglet redevient actif (multi-appareils).

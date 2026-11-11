@@ -1,4 +1,9 @@
+// Moteur d’interface de Cadence (rendu DOM). Monté par le composant React CadenceApp.
 import {colors,iconNames,days,dateKey,asDate,shift,today,dayIndex,weekStart,range,amount,due,done,period,streaks,scheduleLabel,normalize,emptyData} from './model.js';
+
+export function startCadence({initial,user,save,fetchLatest,onLogout}) {
+const cleanups=[];
+const on=(target,type,fn,opts)=>{target.addEventListener(type,fn,opts);cleanups.push(()=>target.removeEventListener(type,fn,opts));};
 
 const paths = {
  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -17,29 +22,35 @@ const longDate=d=>format(d,{weekday:'long',day:'numeric',month:'long',year:'nume
 const shortDate=d=>format(d,{day:'numeric',month:'short'});
 const pretty=v=>new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2}).format(v);
 const tint=h=>`style="--habit:${colors[h.color]}"`;
-const appKey='mosaique.v1';
 const main=document.querySelector('#main');
 const dialog=document.querySelector('#dialog');
 const toastNode=document.querySelector('#toast');
 const fileInput=document.querySelector('#import-file');
 const mainNav=[['today','grid','Accueil'],['habits','list','Habitudes'],['stats','chart','Stats'],['settings','settings','Paramètres']];
-let db, page='today', selected=today(), category='', activeModal=null, installEvent=null, offlineReady=false, toastTimer, lastFocus, lastDay=today();
-let storageError=false;
-try {
-  const stored=localStorage.getItem(appKey);
-  const previous=stored?JSON.parse(stored):null;
-  db=previous?normalize(previous):emptyData();
-  if (!previous||previous.habits.some(h=>h?.demo)) localStorage.setItem(appKey,JSON.stringify(db));
-} catch {
-  db??=emptyData();
-  storageError=true;
+let db=normalize(initial), page='today', selected=today(), category='', activeModal=null, installEvent=null, offlineReady=false, toastTimer, lastFocus, lastDay=today();
+let storageError=false, saveTimer=null, retryTimer=null, saving=false, dirty=false, disposed=false;
+async function flush() {
+  if (saving||!dirty||disposed) return;
+  saving=true; dirty=false;
+  try { await save(db); if(storageError){storageError=false;render();} }
+  catch { storageError=true; dirty=true; toast('Enregistrement impossible. Nouvelle tentative en cours…','bell'); render(); retryTimer=setTimeout(flush,5000); }
+  finally { saving=false; if(dirty&&!storageError) flush(); }
 }
+cleanups.push(()=>{clearTimeout(saveTimer);clearTimeout(retryTimer);});
 function persist(next) {
-  try { localStorage.setItem(appKey,JSON.stringify(next)); db=next; storageError=false; return true; }
-  catch { storageError=true; toast('Impossible d’enregistrer sur cet appareil. Vérifiez l’espace disponible.'); return false; }
+  db=next; dirty=true; clearTimeout(saveTimer); clearTimeout(retryTimer);
+  saveTimer=setTimeout(flush,300);
+  return true;
 }
 function replaceHabit(h) {
   return persist({...db,habits:db.habits.map(item=>item.id===h.id?h:item)});
+}
+async function refresh() {
+  if (disposed||dirty||saving||dialog.open||!navigator.onLine) return;
+  try {
+    const latest=normalize(await fetchLatest());
+    if (!dirty&&!saving&&JSON.stringify(latest)!==JSON.stringify(db)) { db=latest; render(); }
+  } catch {}
 }
 const get=id=>db.habits.find(h=>h.id===id);
 const active=()=>db.habits.filter(h=>!h.archived);
@@ -47,7 +58,7 @@ function btn(icon,label,action,extra='',classes='icon-btn') {
   return `<button type="button" class="${classes}" aria-label="${esc(label)}" title="${esc(label)}" data-action="${action}" ${extra}>${svg(icon)}</button>`;
 }
 function brand() {
-  return `<button class="brand" data-action="nav" data-page="today" aria-label="Cadence, accueil"><img src="./assets/icon.svg" alt=""><span><strong>Cadence<span>.</span></strong><small>Mon carnet d’habitudes</small></span></button>`;
+  return `<button class="brand" data-action="nav" data-page="today" aria-label="Cadence, accueil"><img src="/assets/icon.svg" alt=""><span><strong>Cadence<span>.</span></strong><small>Mon carnet d’habitudes</small></span></button>`;
 }
 function nav(items) {
   const current=page==='archive'?'settings':page;
@@ -60,7 +71,7 @@ function chrome() {
   connection();
 }
 function connection() {
-  const label=!navigator.onLine?'Hors ligne':offlineReady?'Prêt hors ligne':'Sur cet appareil';
+  const label=!navigator.onLine?'Hors ligne':storageError?'Synchronisation en attente':'Synchronisé · '+esc(user.name||user.email);
   document.querySelector('#connection').innerHTML=`<i></i>${label}`;
 }
 function sprout() {
@@ -183,6 +194,9 @@ function archive() {
 }
 function settings() {
   return `${pageHead('Paramètres','Personnalisez votre carnet et gardez une copie de vos données.','VOTRE ESPACE')}
+  <article class="panel settings"><h2>Compte</h2>
+    <div class="settings-row"><span><strong>${esc(user.name||'Mon compte')}</strong><small>${esc(user.email)}</small></span>${btn('arrow','Se déconnecter','logout')}</div>
+  </article>
   <article class="panel settings"><h2>Apparence</h2>
     <label class="settings-row"><span><strong>Thème</strong><small>Adaptez la luminosité de l’interface.</small></span><select data-setting="theme"><option value="dark" ${db.settings.theme==='dark'?'selected':''}>Sombre</option><option value="light" ${db.settings.theme==='light'?'selected':''}>Clair</option></select></label>
     <label class="settings-row"><span><strong>Période de la grille</strong><small>Choisissez la durée visible sur vos cartes.</small></span><select data-setting="range">${[35,91,182].map(n=>`<option value="${n}" ${db.settings.range===n?'selected':''}>${n/7} semaines</option>`).join('')}</select></label>
@@ -200,7 +214,7 @@ function settings() {
 function render() {
   chrome();
   const scroll=window.scrollY;
-  main.innerHTML=(storageError?'<p class="warning">Le stockage local a rencontré un problème. Exportez vos données depuis les paramètres si vous en avez besoin.</p>':'')+({today:dashboard,habits:habitList,stats,archive,settings}[page])();
+  main.innerHTML=(storageError?'<p class="warning">La synchronisation avec le serveur a échoué. Vos modifications sont conservées et un nouvel essai est en cours.</p>':'')+({today:dashboard,habits:habitList,stats,archive,settings}[page])();
   if (scroll>0) window.scrollTo(0,scroll);
 }
 function openModal(type, title, body, sub='') {
@@ -213,11 +227,11 @@ function openModal(type, title, body, sub='') {
   (dialog.querySelector('[autofocus]')||dialog.querySelector('button')).focus({preventScroll:true});
 }
 function closeModal() { if(dialog.open) dialog.close(); }
-dialog.addEventListener('close',()=>{
+on(dialog,'close',()=>{
   activeModal=null;
   if (lastFocus?.isConnected) lastFocus.focus({preventScroll:true});
 });
-dialog.addEventListener('click',event=>{ if(event.target===dialog) closeModal(); });
+on(dialog,'click',event=>{ if(event.target===dialog) closeModal(); });
 function options(items,value) {
   return Object.entries(items).map(([key,label])=>`<option value="${key}" ${key===value?'selected':''}>${label}</option>`).join('');
 }
@@ -378,7 +392,7 @@ async function install() {
     return;
   }
   if(matchMedia('(display-mode: standalone)').matches||navigator.standalone) {toast('Cadence est déjà installée.','phone');return;}
-  openModal({name:'install'},'Installer Cadence',`<div class="install-guide"><img src="./assets/icon.svg" alt=""><div><strong>Android · Chrome</strong><p>Ouvrez le menu ⋮, puis « Installer l’application » ou « Ajouter à l’écran d’accueil ».</p><strong>iPhone · Safari</strong><p>Ouvrez « Partager », puis « Sur l’écran d’accueil » et touchez « Ajouter ».</p></div></div><p class="hint">Ouvrez Cadence une première fois en ligne avant de l’utiliser sans connexion.</p><div class="modal-actions"><button class="primary" data-action="close">Compris</button></div>`);
+  openModal({name:'install'},'Installer Cadence',`<div class="install-guide"><img src="/assets/icon.svg" alt=""><div><strong>Android · Chrome</strong><p>Ouvrez le menu ⋮, puis « Installer l’application » ou « Ajouter à l’écran d’accueil ».</p><strong>iPhone · Safari</strong><p>Ouvrez « Partager », puis « Sur l’écran d’accueil » et touchez « Ajouter ».</p></div></div><p class="hint">Ouvrez Cadence une première fois en ligne avant de l’utiliser sans connexion.</p><div class="modal-actions"><button class="primary" data-action="close">Compris</button></div>`);
 }
 function log(h,d,value,note) {
   const entries={...h.entries};
@@ -388,7 +402,7 @@ function log(h,d,value,note) {
 function backFromEntry(h,prev) {
   if(prev) detail(h,prev); else closeModal();
 }
-document.addEventListener('submit',event=>{
+on(document,'submit',event=>{
   const f=event.target;
   if(!['habit-form','entry-form'].includes(f.id)) return;
   event.preventDefault();
@@ -413,12 +427,12 @@ document.addEventListener('submit',event=>{
     render();backFromEntry(get(id),prev);toast('Suivi enregistré.');
   }
 });
-document.addEventListener('change',event=>{
+on(document,'change',event=>{
   if(event.target.closest('#habit-form')) syncForm();
   const {setting}=event.target.dataset;
   if(setting && persist({...db,settings:{...db.settings,[setting]:setting==='range'?Number(event.target.value):event.target.value}})) render();
 });
-document.addEventListener('click',event=>{
+on(document,'click',event=>{
   const el=event.target.closest('button[data-action]');
   if(!el||el.disabled) return;
   const {action,id,date,offset}=el.dataset;
@@ -463,7 +477,7 @@ document.addEventListener('click',event=>{
       if(habits[to]) {[habits[index],habits[to]]=[habits[to],habits[index]]; if(persist({...db,habits})) {render();detail(h,activeModal.month);}}
       break;
     }
-    case 'delete': confirm('Supprimer cette habitude ?',`« ${h.name} » et son historique seront effacés de cet appareil.`,'Supprimer',()=>{
+    case 'delete': confirm('Supprimer cette habitude ?',`« ${h.name} » et son historique seront définitivement effacés de votre compte.`,'Supprimer',()=>{
       if(persist({...db,habits:db.habits.filter(item=>item.id!==h.id)})) {closeModal();render();toast('Habitude supprimée.','trash');}
     });break;
     case 'confirm': activeModal.fn();break;
@@ -471,10 +485,11 @@ document.addEventListener('click',event=>{
     case 'share': shareGrid(h);break;
     case 'ics': calendarReminder(h);break;
     case 'export': exportData();break;
+    case 'logout': flush().finally(onLogout);break;
     case 'import': fileInput.click();break;
   }
 });
-fileInput.addEventListener('change',async()=>{
+on(fileInput,'change',async()=>{
   const file=fileInput.files[0];
   fileInput.value='';
   if(!file) return;
@@ -483,19 +498,15 @@ fileInput.addEventListener('change',async()=>{
     let parsed;
     try {parsed=JSON.parse(await file.text());} catch {throw Error('Le fichier JSON ne peut pas être lu.');}
     const restored=normalize(parsed);
-    confirm('Restaurer la sauvegarde ?',`Ce fichier contient ${restored.habits.length} habitude(s). L’import remplacera les données actuelles sur cet appareil.`,'Restaurer',()=>{
+    confirm('Restaurer la sauvegarde ?',`Ce fichier contient ${restored.habits.length} habitude(s). L’import remplacera les données actuelles de votre compte.`,'Restaurer',()=>{
       if(persist(restored)) {closeModal();category='';selected=today();render();toast('Sauvegarde restaurée.');}
     });
   } catch(err) { openModal({name:'import-error'},'Import impossible',`<p>${esc(err.message)}</p><div class="modal-actions"><button class="primary" data-action="close">Fermer</button></div>`); }
 });
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;});
-window.addEventListener('appinstalled',()=>{installEvent=null;chrome();toast('Cadence est installée.','phone');});
-window.addEventListener('online',connection);
-window.addEventListener('offline',connection);
-window.addEventListener('storage',event=>{
-  if(event.key!==appKey||!event.newValue) return;
-  try {db=normalize(JSON.parse(event.newValue)); closeModal(); render();} catch {}
-});
+on(window,'beforeinstallprompt',e=>{e.preventDefault();installEvent=e;});
+on(window,'appinstalled',()=>{installEvent=null;chrome();toast('Cadence est installée.','phone');});
+on(window,'online',connection);
+on(window,'offline',connection);
 const fired=new Set();
 function tick() {
   const d=today(), now=new Date();
@@ -508,10 +519,13 @@ function tick() {
     toast('Rappel : '+reminders.map(h=>h.name).join(' · '),'bell');
   }
 }
-setInterval(tick,15000);
-document.addEventListener('visibilitychange',tick);
+const timer=setInterval(tick,15000); cleanups.push(()=>clearInterval(timer));
+const poll=setInterval(refresh,60000); cleanups.push(()=>clearInterval(poll));
+on(document,'visibilitychange',()=>{tick();if(!document.hidden)refresh();});
 render();
 tick();
 if('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=7').then(()=>navigator.serviceWorker.ready).then(()=>{offlineReady=true;connection();}).catch(()=>{});
+  navigator.serviceWorker.register('/sw.js?v=8').then(()=>navigator.serviceWorker.ready).then(()=>{offlineReady=true;connection();}).catch(()=>{});
+}
+return ()=>{disposed=true;cleanups.forEach(fn=>fn());};
 }

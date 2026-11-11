@@ -1,5 +1,5 @@
-@font-face{font-family:Noto;src:url('./assets/regular.woff') format('woff');font-weight:400;font-display:swap}
-@font-face{font-family:Noto;src:url('./assets/bold.woff') format('woff');font-weight:700 900;font-display:swap}
+@font-face{font-family:Noto;src:url('/assets/regular.woff') format('woff');font-weight:400;font-display:swap}
+@font-face{font-family:Noto;src:url('/assets/bold.woff') format('woff');font-weight:700 900;font-display:swap}
 :root{color-scheme:dark;--bg:#141219;--side:#18151f;--surface:#1e1b27;--surface-2:#24202e;--line:#332d40;--text:#f7f2ff;--muted:#b2a8c0;--faint:#9388a4;--accent:#c7b5ff;--accent-text:#201638;--soft:#302641;--tile:#2d273a;--mint:#92e8bf;--radius:20px;font:14px/1.5 Noto,sans-serif}
 :root[data-theme=light]{color-scheme:light;--bg:#f5f1fa;--side:#eee8f7;--surface:#fffaff;--surface-2:#f4eff9;--line:#dfd5e9;--text:#21182f;--muted:#60536d;--faint:#746681;--accent:#7850cb;--accent-text:#fff;--soft:#e9dcfc;--tile:#ece3f4;--mint:#237454}
 *{box-sizing:border-box}
@@ -401,3 +401,15 @@ html::-webkit-scrollbar,dialog::-webkit-scrollbar{display:none}
 .settings-link{min-height:44px}
 .settings-link:hover strong,.settings-link>svg{color:var(--accent)}
 .back-link{min-height:42px;display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-size:12px;font-weight:700;margin-bottom:10px}
+.auth{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text)}
+.auth-card{width:min(100%,380px);display:grid;gap:14px;padding:28px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);justify-items:stretch}
+.auth-card>img{justify-self:center;border-radius:16px}
+.auth-card h1{margin:0;text-align:center;font-size:30px;letter-spacing:-.06em}
+.auth-card h1 span{color:var(--accent)}
+.auth-card p{margin:0;text-align:center;color:var(--muted)}
+.auth-card label{display:grid;gap:6px;font-weight:700;font-size:13px}
+.auth-card input{font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);color:var(--text)}
+.auth-card small{color:var(--faint);margin-top:-8px}
+.auth-card button.primary{padding:12px;border:0;border-radius:12px;font:inherit;font-weight:700;cursor:pointer}
+.auth-card button:disabled{opacity:.6;cursor:wait}
+.auth-card a{color:var(--accent);font-weight:700}

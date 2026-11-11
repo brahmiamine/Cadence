@@ -3,5 +3,8 @@
 .env.*
 !.env.example
 node_modules/
+.next/
 *.log
 __pycache__/
+*.tsbuildinfo
+next-env.d.ts
