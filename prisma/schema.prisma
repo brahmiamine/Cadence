@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -33,13 +33,13 @@ model Habit {
   kind          String
   repeat        String
   frequency     Int
-  days          Int[]
+  days          Json
   unit          String   @default("")
   target        Float
   icon          String
   color         String
   reminder      String   @default("")
-  reminderDays  Int[]
+  reminderDays  Json
   archived      Boolean  @default(false)
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   entries       Entry[]
@@ -52,7 +52,7 @@ model Entry {
   habitPk String
   date    String
   value   Float
-  note    String @default("")
+  note    String @db.Text
   habit   Habit  @relation(fields: [habitPk], references: [pk], onDelete: Cascade)
 
   @@id([habitPk, date])

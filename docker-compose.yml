@@ -1,14 +1,15 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: mariadb:11
     restart: unless-stopped
     environment:
-      POSTGRES_USER: cadence
-      POSTGRES_PASSWORD: cadence
-      POSTGRES_DB: cadence
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_USER: cadence
+      MARIADB_PASSWORD: cadence
+      MARIADB_DATABASE: cadence
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - cadence-db:/var/lib/postgresql/data
+      - cadence-db:/var/lib/mysql
 volumes:
   cadence-db:

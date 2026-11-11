@@ -1,18 +1,18 @@
 # Cadence
 
-Carnet d’habitudes personnel, désormais en **Next.js** avec **comptes multi-utilisateurs** (NextAuth) et **données stockées en base PostgreSQL** pour chaque utilisateur.
+Carnet d’habitudes personnel, désormais en **Next.js** avec **comptes multi-utilisateurs** (NextAuth) et **données stockées en base MariaDB / MySQL** pour chaque utilisateur.
 
 ## Stack
 
 - Next.js 15 (App Router) · React 19 · TypeScript
 - NextAuth v4 (credentials e-mail / mot de passe, sessions JWT, mots de passe hachés avec bcrypt)
-- Prisma + PostgreSQL (tables `User`, `Habit`, `Entry`)
+- Prisma + MariaDB / MySQL (tables `User`, `Habit`, `Entry`)
 
 ## Démarrage local
 
 ```sh
 cp .env.example .env          # puis définir NEXTAUTH_SECRET (openssl rand -base64 32)
-docker compose up -d db       # PostgreSQL
+docker compose up -d db       # MariaDB
 npm install
 npx prisma migrate deploy     # crée les tables
 npm run dev                   # http://localhost:3000
@@ -24,11 +24,11 @@ Créez un compte sur `/register` : chaque utilisateur accède uniquement à son 
 
 | Variable | Rôle |
 |---|---|
-| `DATABASE_URL` | URL PostgreSQL |
+| `DATABASE_URL` | URL MariaDB / MySQL |
 | `NEXTAUTH_SECRET` | Secret de signature des sessions |
 | `NEXTAUTH_URL` | URL publique de l’application |
 
-## Déploiement (ex. Vercel + Neon/Supabase)
+## Déploiement 
 
 Définir les 3 variables ci-dessus, puis exécuter `npx prisma migrate deploy` contre la base de production (build : `npm run build`).
 

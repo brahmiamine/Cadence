@@ -1,69 +1,60 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
+-- CreateTable
+CREATE TABLE `User` (
+    `id` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NULL,
+    `passwordHash` VARCHAR(191) NOT NULL,
+    `theme` VARCHAR(191) NOT NULL DEFAULT 'dark',
+    `gridRange` INTEGER NOT NULL DEFAULT 91,
+    `view` VARCHAR(191) NOT NULL DEFAULT 'grid',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `User_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE "User" (
-    "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "name" TEXT,
-    "passwordHash" TEXT NOT NULL,
-    "theme" TEXT NOT NULL DEFAULT 'dark',
-    "gridRange" INTEGER NOT NULL DEFAULT 91,
-    "view" TEXT NOT NULL DEFAULT 'grid',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+CREATE TABLE `Habit` (
+    `pk` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `clientId` VARCHAR(191) NOT NULL,
+    `position` INTEGER NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NOT NULL DEFAULT '',
+    `category` VARCHAR(191) NOT NULL DEFAULT '',
+    `start` VARCHAR(191) NOT NULL,
+    `mode` VARCHAR(191) NOT NULL,
+    `kind` VARCHAR(191) NOT NULL,
+    `repeat` VARCHAR(191) NOT NULL,
+    `frequency` INTEGER NOT NULL,
+    `days` JSON NOT NULL,
+    `unit` VARCHAR(191) NOT NULL DEFAULT '',
+    `target` DOUBLE NOT NULL,
+    `icon` VARCHAR(191) NOT NULL,
+    `color` VARCHAR(191) NOT NULL,
+    `reminder` VARCHAR(191) NOT NULL DEFAULT '',
+    `reminderDays` JSON NOT NULL,
+    `archived` BOOLEAN NOT NULL DEFAULT false,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Habit" (
-    "pk" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "clientId" TEXT NOT NULL,
-    "position" INTEGER NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT NOT NULL DEFAULT '',
-    "category" TEXT NOT NULL DEFAULT '',
-    "start" TEXT NOT NULL,
-    "mode" TEXT NOT NULL,
-    "kind" TEXT NOT NULL,
-    "repeat" TEXT NOT NULL,
-    "frequency" INTEGER NOT NULL,
-    "days" INTEGER[],
-    "unit" TEXT NOT NULL DEFAULT '',
-    "target" DOUBLE PRECISION NOT NULL,
-    "icon" TEXT NOT NULL,
-    "color" TEXT NOT NULL,
-    "reminder" TEXT NOT NULL DEFAULT '',
-    "reminderDays" INTEGER[],
-    "archived" BOOLEAN NOT NULL DEFAULT false,
-
-    CONSTRAINT "Habit_pkey" PRIMARY KEY ("pk")
-);
+    INDEX `Habit_userId_position_idx`(`userId`, `position`),
+    UNIQUE INDEX `Habit_userId_clientId_key`(`userId`, `clientId`),
+    PRIMARY KEY (`pk`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE "Entry" (
-    "habitPk" TEXT NOT NULL,
-    "date" TEXT NOT NULL,
-    "value" DOUBLE PRECISION NOT NULL,
-    "note" TEXT NOT NULL DEFAULT '',
+CREATE TABLE `Entry` (
+    `habitPk` VARCHAR(191) NOT NULL,
+    `date` VARCHAR(191) NOT NULL,
+    `value` DOUBLE NOT NULL,
+    `note` TEXT NOT NULL,
 
-    CONSTRAINT "Entry_pkey" PRIMARY KEY ("habitPk","date")
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-
--- CreateIndex
-CREATE INDEX "Habit_userId_position_idx" ON "Habit"("userId", "position");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Habit_userId_clientId_key" ON "Habit"("userId", "clientId");
+    PRIMARY KEY (`habitPk`, `date`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE "Habit" ADD CONSTRAINT "Habit_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Habit` ADD CONSTRAINT `Habit_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Entry" ADD CONSTRAINT "Entry_habitPk_fkey" FOREIGN KEY ("habitPk") REFERENCES "Habit"("pk") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Entry` ADD CONSTRAINT `Entry_habitPk_fkey` FOREIGN KEY (`habitPk`) REFERENCES `Habit`(`pk`) ON DELETE CASCADE ON UPDATE CASCADE;
 
