@@ -32,6 +32,28 @@ Créez un compte sur `/register` : chaque utilisateur accède uniquement à son 
 
 Définir les 3 variables ci-dessus, puis exécuter `npx prisma migrate deploy` contre la base de production (build : `npm run build`).
 
+### Production sur le VPS avec Docker et Caddy
+
+1. Créer un fichier `.env` à partir de `.env.example` avec `NEXTAUTH_URL=https://cadence.clubika.com`, un `NEXTAUTH_SECRET` aléatoire et les identifiants MariaDB de production. Le fichier reste hors de Git et de l’image Docker.
+2. Pour la base MariaDB de l’hôte, utiliser le socket `/run/mysqld/mysqld.sock` dans `DATABASE_URL`, comme indiqué dans `.env.example`. Le conteneur monte le répertoire du socket.
+3. Le conteneur Caddy et Cadence doivent partager le réseau Docker `clubika_internal`. Définir `PROXY_NETWORK` dans `.env` si le réseau porte un autre nom.
+4. Construire et démarrer Cadence :
+
+   ```sh
+   docker compose -f docker-compose.prod.yml up -d --build --wait
+   ```
+
+   Le démarrage applique les migrations Prisma avant de lancer Next.js. Le contrôle de santé vérifie l’application et sa connexion à MariaDB via `/api/health`.
+5. Faire pointer le DNS de `cadence.clubika.com` vers le VPS. Ajouter le bloc de `deploy/Caddyfile` au Caddyfile partagé du serveur, puis valider et recharger Caddy :
+
+   ```sh
+   docker exec clubika-caddy-1 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+   docker exec clubika-caddy-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+   ```
+
+   Caddy obtient et renouvelle automatiquement le certificat HTTPS. Sur ce VPS, le Caddyfile partagé est `/opt/clubika/deploy/Caddyfile` ; le bloc Cadence s’ajoute aux domaines existants.
+6. Vérifier `https://cadence.clubika.com/login` et `https://cadence.clubika.com/api/health` (réponse attendue : `{"ok":true}`). Les pages de connexion et d’inscription sont publiques ; les données exigent une session authentifiée.
+
 ## Organisation
 
 - `src/app/` : pages (`/`, `/login`, `/register`) et API (`/api/auth`, `/api/register`, `/api/data`).

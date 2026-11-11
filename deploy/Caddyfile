@@ -1,0 +1,4 @@
+cadence.clubika.com {
+	encode gzip zstd
+	reverse_proxy cadence-web:3000
+}

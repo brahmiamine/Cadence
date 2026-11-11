@@ -1,0 +1,30 @@
+# Déploiement sur le VPS : `docker compose -f docker-compose.prod.yml up -d --build` avec un fichier .env (voir .env.example).
+# Le conteneur rejoint le réseau Docker de Caddy et lit MariaDB via le socket Unix de l'hôte.
+name: cadence
+
+services:
+  web:
+    build: .
+    container_name: cadence-web
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - /run/mysqld:/run/mysqld
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-clubika_internal}
