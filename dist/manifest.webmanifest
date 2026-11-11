@@ -1,0 +1,38 @@
+{
+  "id": "./",
+  "name": "Cadence — Mon carnet d’habitudes",
+  "short_name": "Cadence",
+  "description": "Un jour à la fois. Votre carnet d’habitudes coloré et hors ligne.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#17131f",
+  "theme_color": "#17131f",
+  "icons": [
+    {
+      "src": "./assets/cadence-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/cadence-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/cadence-mask-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/cadence-mask-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
