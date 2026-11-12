@@ -86,7 +86,7 @@ export function normalize(data) {
     const frequency=Math.trunc(num(h.frequency,1,repeat==='weekly'?7:repeat==='monthly'?31:365,repeat==='interval'?2:1));
     const selectedDays=Array.isArray(h.days)?[...new Set(h.days.filter(d=>Number.isInteger(d)&&d>=0&&d<=6))].sort():[];
     const reminderDays=Array.isArray(h.reminderDays)?[...new Set(h.reminderDays.filter(d=>Number.isInteger(d)&&d>=0&&d<=6))].sort():[];
-    return {id:h.id,name:str(h.name,64),description:str(h.description,160),category:str(h.category,35),
+    return {id:h.id,name:str(h.name,64),description:str(h.description,300),category:str(h.category,35),
       start:h.start, mode,kind,repeat,frequency,days:selectedDays.length?selectedDays:[0,1,2,3,4,5,6],
       unit:str(h.unit,18),target:kind==='check'?1:num(h.target,mode==='quit'?0:0.01,1e6,1),
       icon:Object.hasOwn(iconNames,h.icon)?h.icon:'spark',color:Object.hasOwn(colors,h.color)?h.color:'lilac',

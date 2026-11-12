@@ -246,7 +246,7 @@ function edit(h) {
   openModal({name:'edit',id:h?.id},h?'Modifier l’habitude':'Nouvelle habitude',`
   <form id="habit-form">
     <label>Nom <input name="name" maxlength="64" required value="${esc(initial.name)}" placeholder="Ex. Marcher 20 minutes" autofocus></label>
-    <label>Description <span class="optional">facultatif</span><input name="description" maxlength="160" value="${esc(initial.description)}" placeholder="Ajoutez un petit rappel de votre intention"></label>
+    <label>Description <span class="optional">facultatif</span><input name="description" maxlength="300" value="${esc(initial.description)}" placeholder="Ajoutez un petit rappel de votre intention"></label>
     <div class="fields"><label>Catégorie<input name="category" list="categories" maxlength="35" value="${esc(initial.category)}" placeholder="Ex. Bien-être"><datalist id="categories">${categories.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label><label>Début<input type="date" name="start" required min="1900-01-01" max="${today()}" value="${initial.start}"></label></div>
     <fieldset><legend>Couleur</legend>${choices({mint:'Menthe',blue:'Bleu',lilac:'Lilas',peach:'Pêche',rose:'Rose',lemon:'Jaune',teal:'Turquoise',red:'Corail'},'color',initial.color,key=>`<i style="background:${colors[key]}"></i>`)}</fieldset>
     <fieldset><legend>Icône</legend>${choices(iconNames,'icon',initial.icon,key=>svg(key,18))}</fieldset>
