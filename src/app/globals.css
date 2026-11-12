@@ -413,15 +413,3 @@ html::-webkit-scrollbar,dialog::-webkit-scrollbar{display:none}
 .auth-card button.primary{padding:12px;border:0;border-radius:12px;font:inherit;font-weight:700;cursor:pointer}
 .auth-card button:disabled{opacity:.6;cursor:wait}
 .auth-card a{color:var(--accent);font-weight:700}
-
-/* Long habit names/descriptions: wrap on two lines instead of overflowing (mobile-friendly) */
-.habit-name strong,.habit-name small{white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
-.habit-name strong{line-height:1.2}.habit-name small{line-height:1.3}
-.habit-card,.habit-top,.habit-name{min-width:0;max-width:100%}
-.habit-bottom .streak b{overflow-wrap:anywhere}
-@media (max-width:560px){
-  .compact .habit-card{flex-wrap:wrap;gap:8px}
-  .compact .habit-top{flex:1 1 100%}
-  .compact .habit-bottom{flex:1 1 100%;padding:0;justify-content:space-between}
-  .habit-card{padding-inline:14px}
-}
