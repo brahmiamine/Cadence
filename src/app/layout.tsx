@@ -1,3 +1,4 @@
+import Script from 'next/script';
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
@@ -19,7 +20,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" data-theme="dark" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>{children}<Script src="/_notifications/client.js" strategy="afterInteractive" /></body>
     </html>
   );
 }
