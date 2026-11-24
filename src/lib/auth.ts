@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { allowAttempt, clientIp } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
@@ -22,9 +23,12 @@ export const authOptions: NextAuthOptions = {
         email: { label: "E-mail", type: "email" },
         password: { label: "Mot de passe", type: "password" },
       },
-      async authorize(raw) {
+      async authorize(raw, req) {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
+        // 10 tentatives / 15 min par IP + e-mail, 50 par IP.
+        const ip = clientIp(req?.headers);
+        if (!allowAttempt(`login:${ip}:${parsed.data.email}`, 10, 15 * 60_000) || !allowAttempt(`login-ip:${ip}`, 50, 15 * 60_000)) return null;
         const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
         const ok = await bcrypt.compare(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
         if (!user || !ok) return null;

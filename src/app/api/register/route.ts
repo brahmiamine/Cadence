@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { allowAttempt, clientIp } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Indiquez votre nom.").max(60),
@@ -11,6 +12,9 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  if (!allowAttempt(`register:${clientIp(req.headers)}`, 10, 60 * 60_000)) {
+    return NextResponse.json({ error: "Trop de tentatives. Réessayez plus tard." }, { status: 429 });
+  }
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
