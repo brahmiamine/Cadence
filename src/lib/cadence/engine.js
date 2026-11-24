@@ -204,6 +204,7 @@ function settings() {
   <article class="panel settings"><h2>Habitudes</h2>
     <button class="settings-row settings-link" data-action="nav" data-page="archive"><span><strong>Archives</strong><small>Consultez ou restaurez vos habitudes mises en pause.</small></span>${svg('right',20)}</button>
   </article>
+  <article class="panel settings"><h2>Notifications</h2><div data-pwa-reminder-slot></div></article>
   <article class="panel settings"><h2>Application et données</h2>
     <div class="settings-row"><span><strong>Installer Cadence</strong><small>Ouvrez votre carnet depuis l’écran d’accueil.</small></span>${btn('phone','Installer Cadence','install')}</div>
     <div class="settings-row"><span><strong>Exporter une sauvegarde</strong><small>Téléchargez vos habitudes, l’historique et vos réglages.</small></span>${btn('download','Exporter','export')}</div>
